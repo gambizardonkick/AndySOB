@@ -728,18 +728,39 @@ const rewards = [250, 125, 65, 35, 25]; // Only first 10 rewarded
 function updateCountdown() {
   const el = document.getElementById("countdown");
   const now = new Date();
-  const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0));
-  const target = new Date(nextMonth.getTime() - 60000); // End of current month UTC
+
+  // Figure out the next reset: next 8th 23:59:59 UTC
+  let year = now.getUTCFullYear();
+  let month = now.getUTCMonth();
+
+  // If today is after the 8th, count forward to next month's 8th
+  if (
+    now.getUTCDate() > 8 ||
+    (now.getUTCDate() === 8 &&
+      (now.getUTCHours() > 23 || (now.getUTCHours() === 23 && (now.getUTCMinutes() > 59 || (now.getUTCMinutes() === 59 && now.getUTCSeconds() >= 59)))))
+  ) {
+    month++;
+    if (month > 11) {
+      month = 0;
+      year++;
+    }
+  }
+
+  // Target is the next 8th at 23:59:59 UTC
+  const target = new Date(Date.UTC(year, month, 8, 23, 59, 59));
   const diff = target - now;
-  if (diff <= 0) return el.textContent = "Ended";
+  if (diff <= 0) return (el.textContent = "Ended");
+
   const d = Math.floor(diff / (1000 * 60 * 60 * 24));
   const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
   const m = Math.floor((diff / (1000 * 60)) % 60);
   const s = Math.floor((diff / 1000) % 60);
   el.textContent = `${d}d ${h}h ${m}m ${s}s`;
 }
+
 setInterval(updateCountdown, 1000);
 updateCountdown();
+
 
 async function loadLeaderboard(apiURL = CURRENT_API_URL){
   const res = await fetch(apiURL);
